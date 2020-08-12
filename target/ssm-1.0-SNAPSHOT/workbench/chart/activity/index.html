@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>市场活动统计图表</title>
+    <script type="text/javascript" src="/jquery/ECharts/echarts.min.js"></script>
+    <script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            var res=[];
+            var name=[];
+
+            var datum;
+            var datum1;
+
+            $.ajax({
+                type:'get',
+                url:'/echart/active',
+                dataType:'json',
+                success:function (obj) {
+                    if (obj.success){
+                         var data = obj.data;
+                         datum = data["name"];
+                         datum1 = data["cost"];
+                      /*  for (var i = 0; i <datum.length; i++) {
+                            res.push(datum[i])
+                        }
+                        alert(res)*/
+                        var myChart = echarts.init(document.getElementById('main'));
+
+
+                        option = {
+                            xAxis: {
+                                type: 'category',
+                                data:datum
+                            },
+                            yAxis: {
+                                type: 'value'
+                            },
+                            series: [{
+
+                                data: datum1,
+                                type: 'bar',
+                                showBackground: true,
+                                backgroundStyle: {
+                                    color: 'rgba(220, 220, 220, 0.8)'
+                                }
+                            }]
+                        };
+                        myChart.setOption(option);
+
+
+    
+                    }
+                }
+            })
+
+
+        })
+
+    </script>
+</head>
+<body>
+<div>
+    <h2>市场活动统计图表</h2>
+</div>
+
+<!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+<div id="main" style="width: 600px;height:400px;"></div>
+
+</body>
+</html>

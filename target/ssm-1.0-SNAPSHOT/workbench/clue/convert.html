@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+
+
+<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/locale/bootstrap-datetimepicker.zh-CN.js"></script>
+
+</head>
+<script type="text/javascript">
+	var id1 = GetRequest().id;
+	var owner1 = GetRequest().owner;
+//时间插件
+	$(function(){
+		shuaxin();
+		//年月日
+		$(".time").datetimepicker({
+			minView: "month",
+			language:  'zh-CN',
+			format: 'yyyy-mm-dd',
+			autoclose: true,
+			todayBtn: true,
+			pickerPosition: "bottom-left"
+		});
+
+
+		$("#isCreateTransaction").click(function(){
+			if(this.checked){
+				$.ajax({
+					type:'get',
+					url:'/cule/data',
+					dataType:'json',
+					success:function (obj) {
+						if (obj.success){
+							var data = obj.data;
+							option(data,"stage",$("#stage"));
+						}
+					}
+				})
+				$("#create-transaction2").show(200);
+			}else{
+				$("#create-transaction2").hide(200);
+			}
+		});
+	});
+	//分割url方法
+	function GetRequest() {
+		var url = decodeURI(location.search); //获取url中"?"符后的字串
+		var theRequest = new Object();
+		if (url.indexOf("?") != -1) {//如果能查到？则继续往下 查不到返回-1
+			var str = url.substr(1);//截取第一个到最后的字符
+			strs = str.split("&");//以&进行分割
+			for(var i = 0; i < strs.length; i ++) {
+				theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);//里面每一个就是对应id或者其他的属性
+			}
+		}
+		return theRequest;
+	}
+	//跳转之后显示页面
+	function shuaxin(){
+		$.ajax({
+			type:'get',
+			url:'/cule/select',
+			dataType:'json',
+			data:{id:id1},
+			success:function (obj) {
+				if (obj.success){
+					var data = obj.data;
+					var name = data.fullname + data.appellation;
+					$("#name").html(name);
+					$("#company").html(data.company);
+					$("#custom").html(data.company);
+					$("#name1").html(data.fullname);
+					$("#owner1").html(owner1);
+				}
+			}
+		})
+	}
+	//给下拉选赋值封装方法
+	//data是隐藏域里面的map集合
+	//i是要查询的类型
+	//select是要添加的下拉选对象
+	function option(data,i,select) {
+		var datum = data[i];
+		var html="";
+		html+="<option></option>"
+		for (var i = 0; i <datum.length ; i++) {
+			html+="<option value="+datum[i].value+">"+datum[i].value+"</option>"
+		}
+		select.html(html);
+	}
+	function showMark(i) {
+		$.ajax({
+			type:'get',
+			url:'/cule/active',
+			dataType:'json',
+			data:{id:id1,name:i},
+			success:function (obj) {
+				if (obj.success){
+					var data = obj.data;
+					var html = "";
+					for (var i = 0; i <data.length ; i++) {
+						html+="<tr>";
+						html+="<td><input value="+data[i].id+"  type=\"radio\" name=\"activity\"></td>";
+						html+="<td>"+data[i].name+"</td>";
+						html+="<td>"+data[i].startdate+"</td>";
+						html+="<td>"+data[i].enddate+"</td>";
+						html+="<td>"+data[i].owner+"</td>";
+						html+="</tr>";
+					}
+					$("#tb1").html(html);
+				}
+			}
+		})
+		$("#searchActivityModal").modal("show")
+	}
+	function blur1() {
+		var jQuery = $("#search").val();
+
+		showMark(jQuery)
+	}
+	function submit() {
+		var id = $("input[name='activity']:checked").val();
+		var name = $("input[name='activity']:checked").parent().next().text();
+		$("#activity").val(name);
+		$("#search2").val(id);
+	}
+	function transformation() {
+		var newVar = $("#isCreateTransaction").prop('checked');
+		var money1 = $("#amountOfMoney").val();
+		var tradeName = $("#tradeName").val();
+		var date1 = $("#expectedClosingDate").val();
+		var satge1 = $("#stage :selected").val();
+		var id2 = $("#search2").val();
+		$.ajax({
+			type:'get',
+			url:'/clueactivity/transformation',
+			dataType:'json',
+			data:{aid:id2,id:id1,check:newVar,money:money1,name:tradeName,date:date1,stage:satge1},
+			success:function (obj) {
+				if (obj.success){
+					window.location.href="/workbench/customer/index.html";
+				}
+			}
+		})
+
+	}
+
+
+
+
+
+
+</script>
+
+
+<body>
+
+	
+	<!-- 搜索市场活动的模态窗口 -->
+	<div class="modal fade" id="searchActivityModal" role="dialog" >
+		<div class="modal-dialog" role="document" style="width: 90%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title">搜索市场活动</h4>
+				</div>
+				<div class="modal-body">
+					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
+						<form class="form-inline" role="form">
+						  <div class="form-group has-feedback">
+						    <input id="search" onblur="blur1()" type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询">
+						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
+						  </div>
+						</form>
+					</div>
+					<table id="activityTable" class="table table-hover" style="width: 900px; position: relative;top: 10px;">
+						<thead>
+							<tr style="color: #B3B3B3;">
+								<td></td>
+								<td>名称</td>
+								<td>开始日期</td>
+								<td>结束日期</td>
+								<td>所有者</td>
+								<td></td>
+							</tr>
+						</thead>
+						<tbody id="tb1">
+							<!--<tr>
+								<td><input type="radio" name="activity"/></td>
+								<td>发传单</td>
+								<td>2020-10-10</td>
+								<td>2020-10-20</td>
+								<td>zhangsan</td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="activity"/></td>
+								<td>发传单</td>
+								<td>2020-10-10</td>
+								<td>2020-10-20</td>
+								<td>zhangsan</td>-->
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" data-dismiss="modal" onclick="submit()">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="title" class="page-header" style="position: relative; left: 20px;">
+		<h4>转换线索 <small><span id="name"></span>-<span id="company"></span></small></h4>
+	</div>
+	<div id="create-customer" style="position: relative; left: 40px; height: 35px;">
+		<span>新建客户：</span><span id="custom"></span>
+	</div>
+	<div id="create-contact" style="position: relative; left: 40px; height: 35px;">
+		<span>新建联系人：</span><span id="name1"></span>
+
+	</div>
+	<div id="create-transaction1" style="position: relative; left: 40px; height: 35px; top: 25px;">
+		<input type="checkbox" id="isCreateTransaction"/>
+		为客户创建交易
+	</div>
+	<div id="create-transaction2" style="position: relative; left: 40px; top: 20px; width: 80%; background-color: #F7F7F7; display: none;" >
+	
+		<form>
+		  <div class="form-group" style="width: 400px; position: relative; left: 20px;">
+		    <label for="amountOfMoney">金额</label>
+		    <input type="text" class="form-control" id="amountOfMoney">
+		  </div>
+		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
+		    <label for="tradeName">交易名称</label>
+		    <input type="text" class="form-control" id="tradeName" value="动力节点-">
+		  </div>
+		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
+		    <label for="expectedClosingDate">预计成交日期</label>
+		    <input type="text" class="form-control time" id="expectedClosingDate">
+		  </div>
+		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
+		    <label for="stage">阶段</label>
+		    <select id="stage"  class="form-control">
+		    	<!--<option></option>
+		    	<option>资质审查</option>
+		    	<option>需求分析</option>
+		    	<option>价值建议</option>
+		    	<option>确定决策者</option>
+		    	<option>提案/报价</option>
+		    	<option>谈判/复审</option>
+		    	<option>成交</option>
+		    	<option>丢失的线索</option>
+		    	<option>因竞争丢失关闭</option>-->
+		    </select>
+		  </div>
+		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
+			  <!--活动员的id和name-->
+			  <input type="hidden" id="search2">
+		    <label for="activity">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" onclick="showMark()" style="text-decoration: none;"><span class="glyphicon glyphicon-search"></span></a></label>
+		    <input type="text" class="form-control" id="activity" placeholder="点击上面搜索" readonly>
+		  </div>
+		</form>
+		
+	</div>
+	
+	<div id="owner" style="position: relative; left: 40px; height: 35px; top: 50px;">
+		记录的所有者：<br>
+		<b id="owner1"></b>
+	</div>
+	<div id="operation" style="position: relative; left: 40px; height: 35px; top: 100px;">
+		<input class="btn btn-primary" type="button" value="转换" onclick="transformation()">
+		&nbsp;&nbsp;&nbsp;&nbsp;
+		<input class="btn btn-default" type="button" value="取消">
+	</div>
+</body>
+</html>
